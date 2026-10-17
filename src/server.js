@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
-// import pool from "./config/db.js";
-// import authRoutes from "./routes/auth.routes.js";
+import http from "http";
 import dotenv from "dotenv";
 import helmet from "helmet";
 import { global_error_handler, not_found_handler } from "./middleware/error.middleware.js";
@@ -12,10 +11,17 @@ import user_routes from "./routes/user.routes.js";
 import driver_routes from "./routes/driver.routes.js";
 import fare_routes from "./routes/fare.routes.js";
 import ride_routes from "./routes/ride.routes.js";
+import { init_socket_server } from "./socket/socket.server.js";
+import { env_config } from "./config/env.config.js";
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io Server
+init_socket_server(server);
+
 
 const CLIENT = process.env.FRONTEND_URL;
 
@@ -69,6 +75,7 @@ app.get("/", (req, res) => {
   res.send("Backend Server is running 🚀");
 });
 
+
 // Server Health Verification Route
 app.get("/api/v1/health", async (req, res, next) => {
   try {
@@ -76,7 +83,7 @@ app.get("/api/v1/health", async (req, res, next) => {
 
     return send_success_response(res, {
       status_code: 200,
-      message: "Server and database connection are healthy",
+      message: "Server, database, and socket engine are healthy",
       data: {
         server_status: "online",
         uptime_seconds: Math.floor(process.uptime()),
@@ -85,6 +92,9 @@ app.get("/api/v1/health", async (req, res, next) => {
           connected: true,
           db_time: db_health.rows[0].db_time,
           db_name: db_health.rows[0].db_name,
+        },
+        websockets: {
+          enabled: true,
         },
       },
     });
@@ -102,6 +112,12 @@ app.use(global_error_handler);
 
 
 const PORT = process.env.PORT || 5213;
+
+server.listen(PORT, () => {
+  console.log(`[BOOTSTRAP] Server listening on port ${PORT} in [${env_config.node_env}] mode`);
+  console.log(`[BOOTSTRAP] Allowed CORS origin: ${env_config.cors_origin}`);
+  console.log(`[BOOTSTRAP] WebSockets engine initialized on port ${PORT}`);
+});
 
 try {
   const result = await db_pool.query("SELECT NOW()");

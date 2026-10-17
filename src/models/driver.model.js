@@ -62,6 +62,9 @@ export const find_driver_by_user_id = async (user_id) => {
       d.is_online,
       d.current_latitude,
       d.current_longitude,
+      d.bearing,
+      d.speed,
+      d.last_location_at,
       d.rating_average,
       d.total_rides,
       u.full_name,
@@ -93,6 +96,9 @@ export const find_driver_by_id = async (driver_id) => {
       d.is_online,
       d.current_latitude,
       d.current_longitude,
+      d.bearing,
+      d.speed,
+      d.last_location_at,
       d.rating_average,
       d.total_rides,
       u.full_name,
@@ -127,6 +133,21 @@ export const update_driver_status = async (driver_id, { is_online, current_latit
   return result.rows[0] || null;
 };
 
+export const update_driver_telemetry = async (driver_id, { latitude, longitude, bearing = 0.0, speed = 0.0 }) => {
+  const sql = `
+    UPDATE driver_profiles
+    SET current_latitude = $1,
+        current_longitude = $2,
+        bearing = $3,
+        speed = $4,
+        last_location_at = CURRENT_TIMESTAMP
+    WHERE id = $5
+    RETURNING id, current_latitude, current_longitude, bearing, speed, last_location_at;
+  `;
+  const result = await query(sql, [latitude, longitude, bearing, speed, driver_id]);
+  return result.rows[0] || null;
+};
+
 export const find_nearby_available_drivers = async ({
   latitude,
   longitude,
@@ -140,6 +161,7 @@ export const find_nearby_available_drivers = async ({
       d.user_id,
       d.current_latitude,
       d.current_longitude,
+      d.bearing,
       d.rating_average,
       u.full_name,
       u.phone_number,
