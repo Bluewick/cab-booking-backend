@@ -10,6 +10,7 @@ import { send_success_response } from "./utils/response.util.js";
 import auth_routes from "./routes/auth.routes.js";
 import user_routes from "./routes/user.routes.js";
 import driver_routes from "./routes/driver.routes.js";
+import fare_routes from "./routes/fare.routes.js";
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/api/v1/auth", auth_routes);
 app.use("/api/v1/users", user_routes);
 app.use("/api/v1/drivers", driver_routes);
+app.use("/api/v1/fares", fare_routes);
 
 app.get("/", (req, res) => {
   res.send("Backend Server is running 🚀");
