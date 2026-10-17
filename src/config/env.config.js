@@ -18,6 +18,12 @@ export const env_config = {
   jwt_secret: process.env.JWT_SECRET,
   jwt_expires_in: process.env.JWT_EXPIRES_IN || "7d",
   cors_origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-  razorpay_key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_mock_key",
-  razorpay_key_secret: process.env.RAZORPAY_KEY_SECRET || "mock_secret",
+  razorpay_key_id:
+    process.env.RAZORPAY_API_KEY ||
+    process.env.RAZORPAY_KEY_ID ||
+    "rzp_test_placeholder",
+  razorpay_key_secret:
+    process.env.RAZORPAY_SECRET ||
+    process.env.RAZORPAY_KEY_SECRET ||
+    "rzp_secret_placeholder",
 };
