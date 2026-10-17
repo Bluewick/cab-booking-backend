@@ -11,6 +11,7 @@ import auth_routes from "./routes/auth.routes.js";
 import user_routes from "./routes/user.routes.js";
 import driver_routes from "./routes/driver.routes.js";
 import fare_routes from "./routes/fare.routes.js";
+import ride_routes from "./routes/ride.routes.js";
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use("/api/v1/auth", auth_routes);
 app.use("/api/v1/users", user_routes);
 app.use("/api/v1/drivers", driver_routes);
 app.use("/api/v1/fares", fare_routes);
+app.use("/api/v1/rides", ride_routes);
 
 app.get("/", (req, res) => {
   res.send("Backend Server is running 🚀");

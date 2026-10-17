@@ -13,10 +13,8 @@ export const register_driver_transactional = async ({
   try {
     await client.query("BEGIN");
 
-    // Upgrade user role to 'driver'
     await client.query("UPDATE users SET role = 'driver' WHERE id = $1", [user_id]);
 
-    // Insert driver profile
     const driver_insert_sql = `
       INSERT INTO driver_profiles (user_id, license_number, is_verified, is_online)
       VALUES ($1, $2, false, false)
@@ -25,7 +23,6 @@ export const register_driver_transactional = async ({
     const driver_res = await client.query(driver_insert_sql, [user_id, license_number.trim()]);
     const driver = driver_res.rows[0];
 
-    // Insert vehicle details
     const vehicle_insert_sql = `
       INSERT INTO vehicle_details (driver_id, make, model, plate_number, color, vehicle_category)
       VALUES ($1, $2, $3, $4, $5, $6)
@@ -86,6 +83,37 @@ export const find_driver_by_user_id = async (user_id) => {
   return result.rows[0] || null;
 };
 
+export const find_driver_by_id = async (driver_id) => {
+  const sql = `
+    SELECT 
+      d.id AS driver_id,
+      d.user_id,
+      d.license_number,
+      d.is_verified,
+      d.is_online,
+      d.current_latitude,
+      d.current_longitude,
+      d.rating_average,
+      d.total_rides,
+      u.full_name,
+      u.email,
+      u.phone_number,
+      u.avatar_url,
+      v.id AS vehicle_id,
+      v.make,
+      v.model,
+      v.plate_number,
+      v.color,
+      v.vehicle_category
+    FROM driver_profiles d
+    INNER JOIN users u ON u.id = d.user_id
+    LEFT JOIN vehicle_details v ON v.driver_id = d.id
+    WHERE d.id = $1;
+  `;
+  const result = await query(sql, [driver_id]);
+  return result.rows[0] || null;
+};
+
 export const update_driver_status = async (driver_id, { is_online, current_latitude, current_longitude }) => {
   const sql = `
     UPDATE driver_profiles
@@ -96,5 +124,66 @@ export const update_driver_status = async (driver_id, { is_online, current_latit
     RETURNING id, user_id, is_online, current_latitude, current_longitude, updated_at;
   `;
   const result = await query(sql, [is_online, current_latitude, current_longitude, driver_id]);
+  return result.rows[0] || null;
+};
+
+export const find_nearby_available_drivers = async ({
+  latitude,
+  longitude,
+  radius_km = 10,
+  vehicle_category = "standard",
+  limit = 10,
+}) => {
+  const sql = `
+    SELECT 
+      d.id AS driver_id,
+      d.user_id,
+      d.current_latitude,
+      d.current_longitude,
+      d.rating_average,
+      u.full_name,
+      u.phone_number,
+      v.make,
+      v.model,
+      v.plate_number,
+      v.color,
+      v.vehicle_category,
+      ROUND(
+        (6371 * acos(
+          cos(radians($1)) * cos(radians(d.current_latitude)) *
+          cos(radians(d.current_longitude) - radians($2)) +
+          sin(radians($1)) * sin(radians(d.current_latitude))
+        ))::numeric, 2
+      ) AS distance_km
+    FROM driver_profiles d
+    INNER JOIN users u ON u.id = d.user_id
+    INNER JOIN vehicle_details v ON v.driver_id = d.id
+    WHERE d.is_online = true
+      AND d.is_verified = true
+      AND d.current_latitude IS NOT NULL
+      AND d.current_longitude IS NOT NULL
+      AND v.vehicle_category = $3
+      AND (
+        6371 * acos(
+          cos(radians($1)) * cos(radians(d.current_latitude)) *
+          cos(radians(d.current_longitude) - radians($2)) +
+          sin(radians($1)) * sin(radians(d.current_latitude))
+        )
+      ) <= $4
+    ORDER BY distance_km ASC
+    LIMIT $5;
+  `;
+  const result = await query(sql, [latitude, longitude, vehicle_category, radius_km, limit]);
+  return result.rows;
+};
+
+export const increment_driver_rides = async (driver_id) => {
+  const sql = `
+    UPDATE driver_profiles
+    SET total_rides = total_rides + 1
+    WHERE id = $1
+    RETURNING id, total_rides;
+  `;
+  const result = await query(sql, [driver_id]);
   return result.rows[0] || null;
 };
