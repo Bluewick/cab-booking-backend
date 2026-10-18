@@ -10,6 +10,24 @@ export const init_socket_server = (http_server) => {
   io_instance = new Server(http_server, {
     cors: {
       origin: env_config.cors_origin,
+    // cors: {
+    //    origin: (origin, callback) => {
+    //     // Allow requests with no origin (such as mobile apps, curl, or file:// browser execution)
+    //     if (!origin || origin === "null") {
+    //       return callback(null, true);
+    //     }
+
+    //     // Allow configured origin or any localhost/127.0.0.1 development port
+    //     if (
+    //       origin === env_config.cors_origin ||
+    //       origin.startsWith("http://localhost:") ||
+    //       origin.startsWith("http://127.0.0.1:")
+    //     ) {
+    //       return callback(null, true);
+    //     }
+
+    //     return callback(new Error("CORS policy violation on WebSocket handshake"));
+    //   },
       credentials: true,
       methods: ["GET", "POST"],
     },

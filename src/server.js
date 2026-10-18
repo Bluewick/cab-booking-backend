@@ -12,6 +12,10 @@ import driver_routes from "./routes/driver.routes.js";
 import fare_routes from "./routes/fare.routes.js";
 import ride_routes from "./routes/ride.routes.js";
 import payment_routes from "./routes/payment.routes.js";
+import review_routes from "./routes/review.routes.js";
+import sos_routes from "./routes/sos.routes.js";
+import support_routes from "./routes/support.routes.js";
+
 import { init_socket_server } from "./socket/socket.server.js";
 import { env_config } from "./config/env.config.js";
 
@@ -72,6 +76,9 @@ app.use("/api/v1/drivers", driver_routes);
 app.use("/api/v1/fares", fare_routes);
 app.use("/api/v1/rides", ride_routes);
 app.use("/api/v1/payments", payment_routes);
+app.use("/api/v1/reviews", review_routes);
+app.use("/api/v1/sos", sos_routes);
+app.use("/api/v1/support", support_routes);
 
 app.get("/", (req, res) => {
   res.send("Backend Server is running 🚀");
