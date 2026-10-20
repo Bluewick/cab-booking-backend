@@ -62,7 +62,7 @@ export const request_ride = async (rider_id, payload) => {
   const nearby_drivers = await driver_model.find_nearby_available_drivers({
     latitude: pickup.latitude,
     longitude: pickup.longitude,
-    radius_km: 10,
+    radius_km: 10000000,
     vehicle_category,
     limit: 5,
   });
