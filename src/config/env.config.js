@@ -17,7 +17,7 @@ export const env_config = {
   database_url: process.env.DATABASE_URL,
   jwt_secret: process.env.JWT_SECRET,
   jwt_expires_in: process.env.JWT_EXPIRES_IN || "7d",
-  cors_origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  cors_origin: process.env.FRONTEND_URL || "http://localhost:5173",
   razorpay_key_id:
     process.env.RAZORPAY_API_KEY ||
     process.env.RAZORPAY_KEY_ID ||

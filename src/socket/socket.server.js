@@ -3,6 +3,8 @@ import { env_config } from "../config/env.config.js";
 import { socket_auth_middleware } from "../middleware/socket_auth.middleware.js";
 import { register_driver_location_handlers } from "./handlers/driver_location.handler.js";
 import { register_ride_dispatch_handlers } from "./handlers/ride_dispatch.handler.js";
+import dotenv from 'dotenv';
+dotenv.config();
 
 let io_instance = null;
 
@@ -17,7 +19,7 @@ const corsOptions = isDev
         }
 
         if (
-          origin === env_config.cors_origin ||
+          origin === process.env.FRONTEND_URL ||
           origin.startsWith("http://localhost:") ||
           origin.startsWith("http://127.0.0.1:")
         ) {
@@ -29,7 +31,7 @@ const corsOptions = isDev
     }
   : {
       // In production: strict check matching only the configured origin
-      origin: env_config.cors_origin,
+      origin: process.env.FRONTEND_URL,
     };
 
 export const init_socket_server = (http_server) => {
