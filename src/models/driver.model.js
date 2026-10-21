@@ -67,6 +67,8 @@ export const find_driver_by_user_id = async (user_id) => {
       d.last_location_at,
       d.rating_average,
       d.total_rides,
+      d.created_at,
+      d.updated_at,
       u.full_name,
       u.email,
       u.phone_number,
@@ -101,6 +103,8 @@ export const find_driver_by_id = async (driver_id) => {
       d.last_location_at,
       d.rating_average,
       d.total_rides,
+      d.created_at,
+      d.updated_at,
       u.full_name,
       u.email,
       u.phone_number,
@@ -207,5 +211,99 @@ export const increment_driver_rides = async (driver_id) => {
     RETURNING id, total_rides;
   `;
   const result = await query(sql, [driver_id]);
+  return result.rows[0] || null;
+};
+
+export const list_drivers = async ({ is_verified, search, limit = 10, offset = 0 }) => {
+  const conditions = [];
+  const params = [];
+
+  if (typeof is_verified === "boolean") {
+    params.push(is_verified);
+    conditions.push(`d.is_verified = $${params.length}`);
+  }
+
+  if (search && search.trim()) {
+    params.push(`%${search.trim()}%`);
+    const s_idx = params.length;
+    conditions.push(`(
+      u.full_name ILIKE $${s_idx} OR 
+      u.email ILIKE $${s_idx} OR 
+      u.phone_number ILIKE $${s_idx} OR 
+      d.license_number ILIKE $${s_idx} OR 
+      v.plate_number ILIKE $${s_idx}
+    )`);
+  }
+
+  const where_clause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  const count_sql = `
+    SELECT COUNT(*)::int AS total
+    FROM driver_profiles d
+    INNER JOIN users u ON u.id = d.user_id
+    LEFT JOIN vehicle_details v ON v.driver_id = d.id
+    ${where_clause};
+  `;
+  const count_res = await query(count_sql, params);
+  const total = count_res.rows[0]?.total || 0;
+
+  const data_params = [...params];
+  data_params.push(limit);
+  const limit_idx = data_params.length;
+  data_params.push(offset);
+  const offset_idx = data_params.length;
+
+  const data_sql = `
+    SELECT 
+      d.id AS driver_id,
+      d.user_id,
+      d.license_number,
+      d.is_verified,
+      d.is_online,
+      d.current_latitude,
+      d.current_longitude,
+      d.bearing,
+      d.speed,
+      d.last_location_at,
+      d.rating_average,
+      d.total_rides,
+      d.created_at,
+      d.updated_at,
+      u.full_name,
+      u.email,
+      u.phone_number,
+      u.avatar_url,
+      v.id AS vehicle_id,
+      v.make,
+      v.model,
+      v.plate_number,
+      v.color,
+      v.vehicle_category
+    FROM driver_profiles d
+    INNER JOIN users u ON u.id = d.user_id
+    LEFT JOIN vehicle_details v ON v.driver_id = d.id
+    ${where_clause}
+    ORDER BY d.created_at DESC
+    LIMIT $${limit_idx} OFFSET $${offset_idx};
+  `;
+
+  const data_res = await query(data_sql, data_params);
+
+  return {
+    drivers: data_res.rows,
+    total,
+  };
+};
+
+export const update_driver_verification = async (driver_id, is_verified) => {
+  const sql = `
+    UPDATE driver_profiles
+    SET is_verified = $1,
+        is_online = CASE WHEN $1 = false THEN false ELSE is_online END,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = $2
+    RETURNING id, user_id, license_number, is_verified, is_online, rating_average, total_rides, created_at, updated_at;
+  `;
+  const result = await query(sql, [is_verified, driver_id]);
   return result.rows[0] || null;
 };
