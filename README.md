@@ -673,17 +673,21 @@ erDiagram
 
 Waypoints (`pickup` → ordered `stops` → `dropoff`) are measured segment-by-segment using the spherical **Haversine** formula ($R = 6371\text{ km}$), adjusted by a **+25% urban road-curve factor** (minimum $0.5\text{ km}$), and converted to travel minutes assuming an average city speed of $25\text{ km/h}$ plus $3\text{ minutes}$ of dwell time per intermediate stop (minimum $3\text{ minutes}$):
 
-$$d_{\text{route}} = \max\!\left(1.25 \sum_{i=1}^{n-1} d_{\text{Haversine}}(P_i, P_{i+1}),\; 0.5\right), \qquad t_{\text{route}} = \max\!\left(\left\lceil \frac{d_{\text{route}}}{25} \times 60 + 3 \cdot N_{\text{stops}} \right\rceil,\; 3\right)$$
+$$
+d_{\text{route}} = \max\left(1.25 \sum_{i=1}^{n-1} d_{\text{Haversine}}(P_i, P_{i+1}),\ 0.5\right), \qquad t_{\text{route}} = \max\left(\left\lceil \frac{d_{\text{route}}}{25} \times 60 + 3 \cdot N_{\text{stops}} \right\rceil,\ 3\right)
+$$
 
 ### 2. Category Fare &amp; Surge Calculation (`fare.service.js`)
 
 For each vehicle category rule in `fare_rules`, the raw fare combines base, distance, and duration charges, enforces `minimum_fare`, and applies `surge_multiplier`:
 
-$$F_{\text{estimated}} = \text{round}_2\!\Big(\max\big(F_{\text{base}} + d_{\text{route}} \cdot r_{\text{km}} + t_{\text{route}} \cdot r_{\text{min}},\; F_{\text{min}}\big) \times M_{\text{surge}}\Big)$$
+$$
+F_{\text{estimated}} = \text{round}_2\Big(\max\big(F_{\text{base}} + d_{\text{route}} \cdot r_{\text{km}} + t_{\text{route}} \cdot r_{\text{min}},\ F_{\text{min}}\big) \times M_{\text{surge}}\Big)
+$$
 
 ### 3. Settlement Split &amp; GST Receipt Breakdown (`payment.service.js`, `receipt.service.js`)
 
-- **Razorpay Signature Check**: Computes $\text{HMAC-SHA256}(\texttt{order\_id} \mathbin{\|} \texttt{"|"} \mathbin{\|} \texttt{payment\_id},\; \texttt{RAZORPAY\_KEY\_SECRET})$ before capturing funds.
+- **Razorpay Signature Check**: Computes `HMAC-SHA256(order_id + "|" + payment_id, RAZORPAY_KEY_SECRET)` before capturing funds.
 - **Platform / Driver Ledger Split**: Deducts a **20%** platform commission and credits **80%** net earnings to `driver_earnings`.
 - **Tax-Inclusive Receipt**: Extracts **5% GST** from the total fare ($F_{\text{net}} = F_{\text{total}} / 1.05$, $\text{GST} = F_{\text{total}} - F_{\text{net}}$).
 
